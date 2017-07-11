@@ -23,69 +23,63 @@
     self.view.backgroundColor = [UIColor whiteColor];
     
     // imageView
-    UIDropInteraction *imageDropInteraction = [[UIDropInteraction alloc] initWithDelegate:self];
-    
     self.imageView = [[UIImageView alloc] initWithFrame:CGRectMake((self.view.bounds.size.width / 2 - 150) / 2 , (self.view.bounds.size.height - 150) / 2, 150, 150)];
     self.imageView.backgroundColor = [UIColor grayColor];
+    
+    UIDropInteraction *imageDropInteraction = [[UIDropInteraction alloc] initWithDelegate:self];
     [self.imageView addInteraction:imageDropInteraction];
     self.imageView.userInteractionEnabled = YES;
+    
     [self.view addSubview:self.imageView];
     
     // uilabel
-    UIDropInteraction *labelDropInteraction = [[UIDropInteraction alloc] initWithDelegate:self];
-    
     self.label = [[UILabel alloc] initWithFrame:CGRectMake((self.view.bounds.size.width / 2 - self.view.bounds.size.width / 3) / 2, self.view.bounds.size.height / 4, self.view.bounds.size.width / 3, 30)];
-    self.label.userInteractionEnabled = YES;
     self.label.backgroundColor = [UIColor grayColor];
+    
+    UIDropInteraction *labelDropInteraction = [[UIDropInteraction alloc] initWithDelegate:self];
     [self.label addInteraction:labelDropInteraction];
+    self.label.userInteractionEnabled = YES;
+    
     [self.view addSubview:self.label];
 }
 
 - (BOOL)dropInteraction:(UIDropInteraction *)interaction canHandleSession:(id<UIDropSession>)session {
-    NSLog(@"%@",session);
+    NSLog(@"canHandleSession");
     BOOL canHandle = [session hasItemsConformingToTypeIdentifiers:@[(__bridge NSString *)kUTTypeImage, (__bridge NSString *)kUTTypeText]] && session.items.count > 0;
     return canHandle;
 }
 
 - (void)dropInteraction:(UIDropInteraction *)interaction sessionDidEnter:(id<UIDropSession>)session {
-    
+    NSLog(@"sessionDidEnter");
 }
 
-// 会被频繁调用，所以负值操作不在这里进行，而在 dropInteraction:(UIDropInteraction *)interaction performDrop:(id<UIDropSession>)session 里进行
 - (UIDropProposal *)dropInteraction:(UIDropInteraction *)interaction sessionDidUpdate:(id<UIDropSession>)session {
-    CGPoint point = [session locationInView:self.view];
+    NSLog(@"sessionDidUpdate");
     
-    __block UIDropOperation dropOperation;
+    UIDropOperation dropOperation = UIDropOperationForbidden;
     
-    if ([self pointInView:point view:self.imageView]) {
-//        [session loadObjectsOfClass:[UIImage class] completion:^(NSArray<__kindof id<NSItemProviderReading>> * _Nonnull objects) {
-//            if (objects.count == 0) {
-//                dropOperation = UIDropOperationForbidden;
-//            }else {
-//                // 如果是其他app传过来的数据   localDragSession为nil，同一个app则不为空
-//                dropOperation = session.localDragSession == nil ? UIDropOperationCopy : UIDropOperationMove;
-//            }
-//        }];
-        dropOperation = session.localDragSession == nil ? UIDropOperationCopy : UIDropOperationMove;
-        
-    }else if ([self pointInView:point view:self.label]){
-//        [session loadObjectsOfClass:[NSString class] completion:^(NSArray<__kindof id<NSItemProviderReading>> * _Nonnull objects) {
-//            if (objects.count == 0) {
-//                dropOperation = UIDropOperationForbidden;
-//            }else {
-//                // 如果是其他app传过来的数据   localDragSession为nil，同一个app则不为空
-//                dropOperation = session.localDragSession == nil ? UIDropOperationCopy : UIDropOperationMove;
-//            }
-//        }];
-        dropOperation = session.localDragSession == nil ? UIDropOperationCopy : UIDropOperationMove;
-    }else {
-        dropOperation = UIDropOperationCancel;
+    if ([interaction.view isKindOfClass:[UIImageView class]]) {
+        if ([session canLoadObjectsOfClass:[UIImage class]]) {
+            dropOperation = UIDropOperationCopy;
+        }else {
+            dropOperation = UIDropOperationForbidden;
+        }
+    }
+    
+    if ([interaction.view isKindOfClass:[UILabel class]]) {
+        if ([session canLoadObjectsOfClass:[NSString class]]) {
+            dropOperation = UIDropOperationCopy;
+        }else {
+            dropOperation = UIDropOperationForbidden;
+        }
     }
     
     return [[UIDropProposal alloc] initWithDropOperation:dropOperation];
 }
 
 - (void)dropInteraction:(UIDropInteraction *)interaction performDrop:(id<UIDropSession>)session {
+    NSLog(@"performDrop");
+    
     [session loadObjectsOfClass:[UIImage class] completion:^(NSArray<__kindof id<NSItemProviderReading>> * _Nonnull objects) {
         UIImage *image = (UIImage *)[objects firstObject];
         
@@ -103,12 +97,32 @@
     }];
 }
 
-#pragma mark - helper method
-- (BOOL)pointInView:(CGPoint)point view:(UIView *)view {
-    if (point.x > view.frame.origin.x && point.x < view.frame.origin.x + view.frame.size.width && point.y > view.frame.origin.y && point.y < view.frame.origin.y + view.frame.size.height) {
-        return YES;
-    }
-    return NO;
+- (void)dropInteraction:(UIDropInteraction *)interaction sessionDidExit:(id<UIDropSession>)session {
+    NSLog(@"sessionDidExit");
+}
+
+- (void)dropInteraction:(UIDropInteraction *)interaction concludeDrop:(id<UIDropSession>)session {
+    NSLog(@"concludeDrop");
+}
+
+- (void)dropInteraction:(UIDropInteraction *)interaction sessionDidEnd:(id<UIDropSession>)session {
+    NSLog(@"sessionDidEnd");
+}
+
+- (nullable UITargetedDragPreview *)dropInteraction:(UIDropInteraction *)interaction previewForDroppingItem:(UIDragItem *)item withDefault:(UITargetedDragPreview *)defaultPreview {
+    NSLog(@"previewForDroppingItem");
+    
+    UIImageView *imageView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, interaction.view.bounds.size.width, interaction.view.bounds.size.height)];
+    imageView.backgroundColor = [UIColor redColor];
+    
+    UIDragPreviewTarget *previewTarget = [[UIDragPreviewTarget alloc] initWithContainer:interaction.view center:CGPointMake(interaction.view.bounds.size.width / 2, interaction.view.bounds.size.height / 2)];
+    
+    UITargetedDragPreview *dragPreview = [[UITargetedDragPreview alloc] initWithView:imageView parameters:[[UIDragPreviewParameters alloc] init] target:previewTarget];
+    return dragPreview;
+}
+
+- (void)dropInteraction:(UIDropInteraction *)interaction item:(UIDragItem *)item willAnimateDropWithAnimator:(id<UIDragAnimating>)animator {
+    NSLog(@"willAnimateDropWithAnimator");
 }
 
 @end
