@@ -11,9 +11,6 @@
 
 @interface ViewController () <UIDropInteractionDelegate>
 
-@property (nonatomic, strong) UIImageView *imageView;
-@property (nonatomic, strong) UILabel *label;
-
 @end
 
 @implementation ViewController
@@ -23,24 +20,24 @@
     self.view.backgroundColor = [UIColor whiteColor];
     
     // imageView
-    self.imageView = [[UIImageView alloc] initWithFrame:CGRectMake((self.view.bounds.size.width / 2 - 150) / 2 , (self.view.bounds.size.height - 150) / 2, 150, 150)];
-    self.imageView.backgroundColor = [UIColor grayColor];
+    UIImageView *imageView = [[UIImageView alloc] initWithFrame:CGRectMake((self.view.bounds.size.width / 2 - 150) / 2 , (self.view.bounds.size.height - 150) / 2, 150, 150)];
+    imageView.backgroundColor = [UIColor grayColor];
     
     UIDropInteraction *imageDropInteraction = [[UIDropInteraction alloc] initWithDelegate:self];
-    [self.imageView addInteraction:imageDropInteraction];
-    self.imageView.userInteractionEnabled = YES;
+    [imageView addInteraction:imageDropInteraction];
+    imageView.userInteractionEnabled = YES;
     
-    [self.view addSubview:self.imageView];
+    [self.view addSubview:imageView];
     
     // uilabel
-    self.label = [[UILabel alloc] initWithFrame:CGRectMake((self.view.bounds.size.width / 2 - self.view.bounds.size.width / 3) / 2, self.view.bounds.size.height / 4, self.view.bounds.size.width / 3, 30)];
-    self.label.backgroundColor = [UIColor grayColor];
+    UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake((self.view.bounds.size.width / 2 - self.view.bounds.size.width / 3) / 2, self.view.bounds.size.height / 4, self.view.bounds.size.width / 3, 30)];
+    label.backgroundColor = [UIColor grayColor];
     
     UIDropInteraction *labelDropInteraction = [[UIDropInteraction alloc] initWithDelegate:self];
-    [self.label addInteraction:labelDropInteraction];
-    self.label.userInteractionEnabled = YES;
+    [label addInteraction:labelDropInteraction];
+    label.userInteractionEnabled = YES;
     
-    [self.view addSubview:self.label];
+    [self.view addSubview:label];
 }
 
 - (BOOL)dropInteraction:(UIDropInteraction *)interaction canHandleSession:(id<UIDropSession>)session {
@@ -80,21 +77,25 @@
 - (void)dropInteraction:(UIDropInteraction *)interaction performDrop:(id<UIDropSession>)session {
     NSLog(@"performDrop");
     
-    [session loadObjectsOfClass:[UIImage class] completion:^(NSArray<__kindof id<NSItemProviderReading>> * _Nonnull objects) {
-        UIImage *image = (UIImage *)[objects firstObject];
-        
-        if (image) {
-            self.imageView.image = image;
-        }
-    }];
-    
-    [session loadObjectsOfClass:[NSString class] completion:^(NSArray<__kindof id<NSItemProviderReading>> * _Nonnull objects) {
-        NSString *str = (NSString *)[objects firstObject];
-        
-        if (str) {
-            self.label.text = str;
-        }
-    }];
+    if ([interaction.view isKindOfClass:[UIImageView class]]) {
+        [session loadObjectsOfClass:[UIImage class] completion:^(NSArray<__kindof id<NSItemProviderReading>> * _Nonnull objects) {
+            UIImage *image = (UIImage *)[objects firstObject];
+            
+            if (image) {
+                UIImageView *imageView = (UIImageView *)interaction.view;
+                imageView.image = image;
+            }
+        }];
+    } else if ([interaction.view isKindOfClass:[UILabel class]]) {
+        [session loadObjectsOfClass:[NSString class] completion:^(NSArray<__kindof id<NSItemProviderReading>> * _Nonnull objects) {
+            NSString *str = (NSString *)[objects firstObject];
+            
+            if (str) {
+                UILabel *label = (UILabel *)interaction.view;
+                label.text = str;
+            }
+        }];
+    } 
 }
 
 - (void)dropInteraction:(UIDropInteraction *)interaction sessionDidExit:(id<UIDropSession>)session {
